@@ -27,8 +27,8 @@ data/
 !.env.example
 
 # --- Audio samples ----------------------------------------------------------
-# samples/ is versioned on purpose (the hackathon asks for test audio in the
-# repo). Keep them short; drop big personal recordings here instead:
+# samples/ is versioned on purpose (the test audio lives in the repo). Keep them short
+# drop big personal recordings here instead:
 samples/local/
 
 # --- OS / editors ------------------------------------------------------------
