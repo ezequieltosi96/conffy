@@ -37,3 +37,8 @@ Ejecutar worker con archivo sample:
 ```bash
 uv run python -m conffy.worker.cli samples/jfk.wav
 ```
+
+Ejecutar worker con archivo sample largo usando un glosario:
+```bash
+uv run python -m conffy.worker.cli samples/charla.mp3 --glossary nerdearla
+```

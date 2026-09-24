@@ -6,7 +6,13 @@ import respx
 
 from conffy.contracts import Caption, CaptionKind, ProviderError, TranslationRequest
 from conffy.glossary import load_glossary
-from conffy.providers.mt_openai_compat import OpenAICompatTranslator, build_user_message, clean_translation
+from conffy.providers.mt_openai_compat import (
+    OpenAICompatTranslator,
+    build_messages,
+    build_user_message,
+    clean_translation,
+    relevant_glossary,
+)
 from conffy.worker.translate import TranslationStage
 
 
@@ -76,11 +82,29 @@ async def test_retryable_error_is_retried_then_gives_up():
 
 def test_user_message_and_cleanup():
     msg = build_user_message(TranslationRequest(
-        text="Deploy it.", source_lang="en", target_lang="es",
-        context=("Hello.",), glossary={"deploy": "despliegue"}))
-    assert "Context" in msg and "- deploy -> despliegue" in msg and msg.endswith("Deploy it.")
+        text="Deploy it on Kubernetes.", source_lang="en", target_lang="es",
+        context=("Hello.",), glossary={"deploy": "despliegue", "talk": "charla", "Kubernetes": "Kubernetes"}))
+    assert "<context>\nHello.\n</context>" in msg
+    assert "deploy -> despliegue" in msg and "Kubernetes -> Kubernetes" in msg
+    assert "talk" not in msg  # not in the text: filtered out
+    assert msg.endswith("<text>\nDeploy it on Kubernetes.\n</text>")
     assert clean_translation(' "Hola mundo." ') == "Hola mundo."
     assert clean_translation("“Hola”") == "Hola"
+    assert clean_translation("<text>Hola</text>") == "Hola"
+
+
+def test_glossary_matches_whole_words_only():
+    g = {"LLM": "LLM", "talk": "charla"}
+    assert relevant_glossary("LLMs are great", g) == {}
+    assert relevant_glossary("my talk, about an LLM.", g) == g
+
+
+def test_messages_include_few_shot_only_for_known_pairs():
+    es = build_messages(TranslationRequest(text="Hi", source_lang="en", target_lang="es"))
+    pt = build_messages(TranslationRequest(text="Hi", source_lang="en", target_lang="pt"))
+    assert [m["role"] for m in es] == ["system", "user", "assistant", "user"]
+    assert [m["role"] for m in pt] == ["system", "user"]
+    assert "Spanish" in es[0]["content"] and "Portuguese" in pt[0]["content"]
 
 
 @respx.mock

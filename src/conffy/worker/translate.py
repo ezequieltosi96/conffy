@@ -65,11 +65,12 @@ class TranslationStage:
         self._context: deque[str] = deque(maxlen=context_size)
         self._retries = retries
         self._queue: asyncio.Queue[Caption | object] = asyncio.Queue()
+        self._closed = False
         self.stats = TranslationStats()
 
     @property
     def backlog(self) -> int:
-        return self._queue.qsize()
+        return self._queue.qsize() - (1 if self._closed else 0)
 
     def submit(self, caption: Caption) -> None:
         """Non-blocking. Call with every source caption; partials are ignored."""
@@ -78,6 +79,7 @@ class TranslationStage:
 
     def close(self) -> None:
         """No more captions: run() returns after draining the queue."""
+        self._closed = True
         self._queue.put_nowait(_CLOSE)
 
     async def run(self) -> None:

@@ -3,6 +3,7 @@
 nerdearla:
   keep:            # never translated; also fed to Whisper so they are recognized
     - Nerdearla
+    - Goodhart's Law
     - Konex
     - Kubernetes
     - open source
@@ -13,5 +14,6 @@ nerdearla:
     es:
       deploy: despliegue
       talk: charla
+      Goodhart's Law: la Ley de Goodhart
     pt:
       talk: palestra
