@@ -1,0 +1,40 @@
+# --- Python / uv ---------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+# uv.lock is NOT ignored: commit it for reproducible installs
+
+# --- AI models (downloaded by scripts/setup-host.sh, hundreds of MB) --------
+models/
+
+# --- Runtime output --------------------------------------------------------
+logs/
+exports/
+data/
+*.log
+
+# --- Secrets (keep .env.example versioned) ---------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Audio samples ----------------------------------------------------------
+# samples/ is versioned on purpose (the hackathon asks for test audio in the
+# repo). Keep them short; drop big personal recordings here instead:
+samples/local/
+
+# --- OS / editors ------------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp

@@ -1,0 +1,17 @@
+# Glossaries: terms help Whisper recognize names (ASR prompt) and keep
+# translations consistent (MT). Select one per session or with --glossary.
+nerdearla:
+  keep:            # never translated; also fed to Whisper so they are recognized
+    - Nerdearla
+    - Konex
+    - Kubernetes
+    - open source
+    - pull request
+    - DevOps
+    - LLM
+  translate:       # forced translations per target language
+    es:
+      deploy: despliegue
+      talk: charla
+    pt:
+      talk: palestra
