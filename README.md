@@ -12,15 +12,19 @@
 
 ---
 
-Para realizar el setup en una Mac:
+Para permitir la ejecucion de scripts:
 ```bash
 chmod +x scripts/*.sh
-./scripts/setup-host.sh   # instala dependencias, baja modelos, prueba
+```
+
+Para realizar el setup en MacOS (Silicon) - instala dependencias, baja modelos, prueba:
+```bash
+./scripts/setup-host.sh
 ```
 
 Para levantar ollama y whisper:
 ```bash
-./scripts/run-host.sh     # cada vez que trabajes; Ctrl+C corta
+./scripts/run-host.sh
 ```
 
 Instala dependencias y levanta venv:
