@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <b>Live subtitles for every stage.</b><br>
-  Real-time transcription &amp; translation for multi-stage conferences · English ⇄ Español
+  <b>Conffy — Your conference buddy - Live subtitles for every stage.</b><br>
+  Real-time transcription &amp; translation for multi-stage conferences
 </p>
 
 ---
@@ -93,6 +93,12 @@ Open **http://localhost:8080**. Two demo talks are already live: pick one and
 choose EN or ES.
 
 No API keys or accounts are needed: everything runs locally.
+
+### Try it without downloading models
+
+`make demo-nomodels` starts the whole stack with simulated models: the text is
+a sample transcript, and translations are marked as `[es] ...`. It is useful to
+explore the app, the API and the load test on any machine with Docker.
 
 ### Try it in the terminal first
 
@@ -186,12 +192,12 @@ the talk's source URL.
 docker compose up -d --scale worker=4    # 4 talks at the same time
 ```
 
-- **More talks** need more workers and more model capacity: workers are cheap;
-  ASR and translation are the bottleneck. On one Mac, `whisper-server` handles
-  one request at a time, so beyond a few talks run more instances or move the
-  models to a GPU server. Only `ASR_URL` / `MT_URL` change.
+- **More talks** need more workers (cheap: ~3% of a core each) and, above
+  all, more model capacity. One M4 Pro handles 2 live talks comfortably. Move
+  the models to more machines or GPU servers; only `ASR_URL` / `MT_URL` change.
 - **More viewers** need more api replicas behind nginx. Each replica reads
-  every stream once, whatever the number of viewers.
+  every stream once, whatever the number of viewers; 1,500 viewers used ~1%
+  CPU per replica.
 - **Production** (15+ stages): Kubernetes with workers scaled by the number of
   live talks, a GPU pool serving Whisper and Gemma (or hosted providers), and
   managed Valkey. See [docs/SCALING.md](docs/SCALING.md).
@@ -199,16 +205,24 @@ docker compose up -d --scale worker=4    # 4 talks at the same time
 ## Performance
 
 Measured on a Mac mini M4 Pro (48 GB) with Whisper large-v3-turbo (q5_0) and
-Gemma 4 e4b:
+Gemma 4 e4b. Full details in [docs/SCALING.md](docs/SCALING.md).
+
+**Latency of one talk**
 
 | Stage | Latency |
 |---|---|
 | Transcription per sentence | ~0.6 s |
-| Translation per sentence | ~1.2 s average (0.6–2.7 s) |
+| Translation per sentence | ~0.6–1.2 s |
 | Original-language subtitle after the speaker pauses | ~1 s |
-| Translated subtitle after the speaker pauses | ~2–3 s |
+| Translated subtitle after the speaker pauses | ~2 s |
 
-<!-- TODO: add load test results (15 talks x 100 viewers) and max live talks on one Mac. See docs/ROADMAP.md, P0 tasks 4 and 5. -->
+**Viewers:** 1,500 simultaneous viewers over 15 talks, 0 failed connections,
+subtitle delivery p50 8.6 ms and p95 19.9 ms, with each api replica at ~1%
+CPU. Reproduce it with `make loadtest-up && make loadtest`; it needs no GPU.
+
+**Talks per machine:** one M4 Pro runs 2 live talks comfortably (lag ≤1.7 s)
+and 3 at the limit (~4–5 s). Whisper and Gemma share the GPU, so more talks
+need more GPU capacity: more machines, GPU servers or hosted models.
 
 ## Development
 
@@ -241,6 +255,9 @@ More documentation:
 - **Ollama was already open as a desktop app:** quit it before
   `run-host.sh`, so the script can start Ollama with parallel requests enabled.
 - **Names are misheard or badly translated:** add them to the glossary.
+- **Workers use a lot of CPU in Docker:** keep `OMP_NUM_THREADS=1` and
+  `OMP_WAIT_POLICY=PASSIVE` (already set in `docker-compose.yml`). Without them
+  the voice detector's threads spin and burn ~half a core each.
 - **A talk shows "Interrumpida":** check `make logs`, fix the source, then
   `curl -X POST localhost:8080/api/sessions/<id>/start`.
 
