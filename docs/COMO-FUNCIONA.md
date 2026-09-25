@@ -434,60 +434,8 @@ infraestructura. El detalle está en `docs/SCALING.md`.
 
 ---
 
-## 8. Preguntas que te pueden hacer
 
-**¿Por qué dos modelos y no uno que escuche y traduzca directo?**
-Porque cada uno es muy bueno en lo suyo. Whisper es rapidísimo y preciso para
-transcribir, pero solo traduce hacia inglés. Gemma traduce bien y respeta
-instrucciones como "usá este glosario" o "mirá las frases anteriores". Además,
-así el público elige idioma y cada modelo se puede cambiar por separado.
-
-**¿Por qué no WebSocket?**
-Los subtítulos van en una sola dirección. SSE es más simple, atraviesa proxies
-sin problemas y reconecta solo, retomando desde el último evento.
-
-**¿Por qué Valkey y no Kafka o RabbitMQ?**
-Un solo componente liviano nos da cola, historial con reanudación, locks y
-estado. Kafka sería un camión para llevar un paquete. Elegimos Valkey en vez
-de Redis por su licencia BSD.
-
-**¿Qué pasa con 10.000 espectadores?**
-Se agregan réplicas de la API. Valkey no se entera, porque cada réplica lee
-cada charla una sola vez. Con 1.500 espectadores, cada réplica usaba ~1% de CPU.
-
-**¿Funciona sin internet?**
-Sí. Los modelos corren en la Mac y la web se sirve localmente. Solo la
-tipografía viene de Google Fonts, y si no carga se usa una del sistema.
-
-**¿Qué tan preciso es?**
-Con una charla real de Nerdearla, la transcripción fue prácticamente
-perfecta y la traducción, buena. Los errores típicos son nombres propios, y
-se corrigen con el glosario.
-
-**¿Cuánto cuesta?**
-Con modelos locales, solo el hardware: una Mac mini cada 2 charlas. Todo el
-software es open source.
-
-**¿Se puede usar con Gemini?**
-Sí, por diseño: es escribir un adaptador. Está planificado.
-
-**¿Por qué Python?**
-El ecosistema de audio y modelos (ffmpeg, detectores de voz, clientes de
-modelos) está en Python. La arquitectura es la misma que harías en .NET:
-FastAPI equivale a Minimal APIs, cada worker a un BackgroundService, las colas
-a Channels y las interfaces de proveedores a `interface`.
-
-**¿Qué no está hecho?**
-- Micrófono directo desde el navegador (el contrato ya está definido).
-- Panel de producción visual (los datos ya están en la API).
-- Proveedor de Gemini.
-- Estabilización de parciales para que "salten" menos.
-
-Está todo en `docs/ROADMAP.md`.
-
----
-
-## 9. Glosario de términos
+## 8. Glosario de términos
 
 | Término | Qué significa |
 |---|---|
