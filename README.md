@@ -110,7 +110,6 @@ Everything else runs in containers.
 | [docs/SCALING.md](docs/SCALING.md) | Measured capacity and the plan for 15+ stages |
 | [docs/CONTRACTS.md](docs/CONTRACTS.md) | How the components talk to each other (for developers) |
 | [docs/COMO-FUNCIONA.md](docs/COMO-FUNCIONA.md) | The whole system explained step by step, in Spanish |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | What comes next |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ## Numbers
