@@ -210,7 +210,7 @@ on whole utterances. It would need:
 - a worker mode that uses it instead of `AsrPipeline`
 
 Everything downstream stays the same: Valkey streams, fan-out, web and
-exports. It is on the roadmap (P2).
+exports. It is on the roadmap.
 
 ## Choosing
 

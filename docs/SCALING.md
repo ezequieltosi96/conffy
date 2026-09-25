@@ -139,7 +139,7 @@ flowchart LR
 | host models → GPU services (`ASR_URL`, `MT_URL`) | the provider interfaces |
 | Valkey container → managed Valkey | lease-based failover |
 
-Small code changes that production would want (see `docs/ROADMAP.md`):
+Small code changes that production would want:
 viewer counts aggregated across replicas, an ASR adapter for
 OpenAI-compatible transcription servers, and retries for failed URL sources.
 
