@@ -1,4 +1,4 @@
-# Cómo funciona conffy, explicado en criollo
+# Cómo funciona conffy?
 
 Este documento es para entender conffy de punta a punta y poder explicarlo sin
 mirar el código: qué hace cada pieza, por qué la elegimos, qué medimos y qué
