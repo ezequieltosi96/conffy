@@ -1,0 +1,17 @@
+# 15 simultaneous talks for the load test (make loadtest-up). Fake models: no GPU needed.
+sessions:
+  - {id: carga-01, title: "Sala de carga 01", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-02, title: "Sala de carga 02", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-03, title: "Sala de carga 03", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-04, title: "Sala de carga 04", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-05, title: "Sala de carga 05", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-06, title: "Sala de carga 06", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-07, title: "Sala de carga 07", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-08, title: "Sala de carga 08", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-09, title: "Sala de carga 09", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-10, title: "Sala de carga 10", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-11, title: "Sala de carga 11", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-12, title: "Sala de carga 12", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-13, title: "Sala de carga 13", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-14, title: "Sala de carga 14", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: carga-15, title: "Sala de carga 15", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es]}

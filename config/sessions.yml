@@ -1,0 +1,22 @@
+# Sessions created when the API starts (existing ones are left untouched).
+# Paths are relative to the project root, which is also /app inside the containers.
+sessions:
+  - id: sala-a
+    title: "KPIs, presión y burnout"
+    source: {kind: file, uri: samples/charla.mp3, loop: true}
+    source_lang: en
+    target_langs: [es]
+    glossary: nerdearla
+
+  - id: sala-b
+    title: "Demo: JFK, discurso inaugural"
+    source: {kind: file, uri: samples/jfk.wav, loop: true}
+    source_lang: en
+    target_langs: [es]
+
+  # Live stream from OBS through MediaMTX (docker compose --profile rtmp):
+  # - id: sala-c
+  #   title: "Escenario principal"
+  #   source: {kind: url, uri: "rtmp://mediamtx:1935/sala-c"}
+  #   source_lang: es
+  #   target_langs: [en]

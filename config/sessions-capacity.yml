@@ -1,0 +1,6 @@
+# Capacity test with real models: how many live talks one Mac can handle.
+sessions:
+  - {id: cap-1, title: "Capacidad 1", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es], glossary: nerdearla}
+  - {id: cap-2, title: "Capacidad 2", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}
+  - {id: cap-3, title: "Capacidad 3", source: {kind: file, uri: samples/charla.mp3, loop: true}, source_lang: en, target_langs: [es], glossary: nerdearla}
+  - {id: cap-4, title: "Capacidad 4", source: {kind: file, uri: samples/jfk.wav, loop: true}, source_lang: en, target_langs: [es]}

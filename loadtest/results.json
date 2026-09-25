@@ -1,0 +1,19 @@
+{
+  "viewers": 1500,
+  "talks": 15,
+  "streams": 30,
+  "ramp_s": 15.9,
+  "duration_s": 120.0,
+  "connected": 1500,
+  "failed": 0,
+  "dropped": 0,
+  "events_per_s": 791.7,
+  "delay_ms": {
+    "p50": 8.6,
+    "p95": 19.9,
+    "p99": 268.2,
+    "max": 974.9,
+    "mean": 16.9,
+    "samples": 95000
+  }
+}
