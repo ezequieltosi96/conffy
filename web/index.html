@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>conffy · subtítulos en vivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #101a2b; --surface: #19243a; --line: #2a3752;
+    --text: #f1ece2; --muted: #8e98ab; --tally: #e5484d; --focus: #7aa2ff;
+    --size: 1.9rem;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --ink: #f2f4f7; --surface: #ffffff; --line: #d5dae3; --text: #16202f; --muted: #667085; color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--ink); color: var(--text);
+    font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 1.0625rem; line-height: 1.5;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  a, button { color: inherit; font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem; }
+
+  /* ---------- session list ---------- */
+  .brand { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0.25rem; }
+  .lede { color: var(--muted); margin: 0 0 2rem; max-width: 36rem; }
+  .sessions { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .session { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem 1rem; align-items: center; padding: 1.1rem 0; border-bottom: 1px solid var(--line); }
+  .session h2 { font-size: 1.15rem; margin: 0; font-weight: 700; }
+  .status { color: var(--muted); font-size: 0.95rem; display: flex; align-items: center; gap: 0.45rem; }
+  .tally { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--muted); flex: none; }
+  .live .tally { background: var(--tally); box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--tally) 25%, transparent); }
+  .langs { display: flex; gap: 0.5rem; grid-row: span 2; }
+  .langs a { text-decoration: none; padding: 0.55rem 0.9rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--surface); min-width: 3.2rem; text-align: center; }
+  .langs a:hover { border-color: var(--text); }
+  .empty { color: var(--muted); padding: 2rem 0; }
+
+  /* ---------- viewer ---------- */
+  .viewer { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); height: 100%; }
+  .bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--line); }
+  .bar .title { flex: 1; min-width: 0; }
+  .bar .title strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 0.5rem; padding: 0.35rem 0.7rem; text-decoration: none; }
+  .switch { display: flex; gap: 0.35rem; flex: none; }
+  .switch a { text-decoration: none; padding: 0.35rem 0.6rem; border-radius: 0.5rem; color: var(--muted); }
+  .switch a[aria-current="true"] { color: var(--text); background: var(--surface); border: 1px solid var(--line); }
+  .stage { overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 1rem 1.25rem 1.5rem;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%); mask-image: linear-gradient(to bottom, transparent, #000 30%); }
+  .captions { max-width: 46rem; width: 100%; margin: 0 auto; font-size: var(--size); line-height: 1.35; }
+  .captions p { margin: 0 0 0.6em; transition: opacity 0.4s; }
+  .captions p.old { opacity: 0.45; }
+  .captions .partial { color: var(--muted); font-style: italic; }
+  .notice { max-width: 46rem; margin: 0 auto 1rem; color: var(--muted); font-size: 1rem; }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1.25rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.95rem; }
+  .foot .downloads a { margin-left: 0.75rem; }
+  @media (prefers-reduced-motion: reduce) { .captions p { transition: none; } }
+  @media (max-width: 34rem) { :root { --size: 1.45rem; } .bar, .foot { padding-inline: 0.75rem; } .bar { gap: 0.5rem; } .session { grid-template-columns: 1fr; } .langs { grid-row: auto; } }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const LANGS = { en: "English", es: "Español", pt: "Português", fr: "Français", de: "Deutsch", it: "Italiano" };
+const SPOKEN = { en: "inglés", es: "español", pt: "portugués", fr: "francés", de: "alemán", it: "italiano" };
+const STATUS = { live: "En vivo", waiting: "Por comenzar", ended: "Finalizada", error: "Interrumpida" };
+const app = document.getElementById("app");
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const params = new URLSearchParams(location.search);
+
+if (params.get("s") && params.get("lang")) viewer(params.get("s"), params.get("lang"));
+else sessionList();
+
+/* ---------------- session list ---------------- */
+async function sessionList() {
+  document.title = "conffy · subtítulos en vivo";
+  app.className = "wrap";
+  app.innerHTML = `
+    <h1 class="brand">conffy</h1>
+    <p class="lede">Subtítulos en vivo de cada charla, en el idioma original o traducidos. Elegí una sala y un idioma.</p>
+    <ul class="sessions" id="list"><li class="empty">Cargando salas…</li></ul>`;
+  const list = document.getElementById("list");
+  const render = async () => {
+    try {
+      const sessions = await (await fetch("/api/sessions")).json();
+      if (!sessions.length) { list.innerHTML = `<li class="empty">Todavía no hay salas configuradas. Agregalas en config/sessions.yml.</li>`; return; }
+      list.innerHTML = sessions.map(({ config: c, state: s }) => {
+        const langs = [c.source_lang, ...c.target_langs];
+        return `<li class="session ${s.status}">
+          <h2>${esc(c.title)}</h2>
+          <div class="langs">${langs.map((l) =>
+            `<a href="?s=${encodeURIComponent(c.id)}&lang=${l}" lang="${l}" aria-label="${esc(c.title)} en ${LANGS[l] || l}">${l.toUpperCase()}</a>`).join("")}</div>
+          <span class="status"><span class="tally"></span>${STATUS[s.status] || s.status}, en ${SPOKEN[c.source_lang] || c.source_lang}</span>
+        </li>`;
+      }).join("");
+    } catch { list.innerHTML = `<li class="empty">No se pudo conectar con el servidor. Reintentando…</li>`; }
+  };
+  await render();
+  setInterval(render, 5000);
+}
+
+/* ---------------- viewer ---------------- */
+async function viewer(sid, lang) {
+  app.className = "viewer";
+  let session;
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(sid)}`);
+    if (!res.ok) throw new Error();
+    session = await res.json();
+  } catch {
+    app.className = "wrap";
+    app.innerHTML = `<p>No existe la sala “${esc(sid)}”. <a href="/">Ver todas las salas</a></p>`;
+    return;
+  }
+  const c = session.config;
+  const langs = [c.source_lang, ...c.target_langs];
+  document.title = `${c.title} · conffy`;
+  const size = parseFloat(localStorage.getItem("conffy:size") || "0");
+  if (size) document.documentElement.style.setProperty("--size", `${size}rem`);
+
+  app.innerHTML = `
+    <header class="bar">
+      <a class="icon-btn" href="/" aria-label="Volver a las salas">←</a>
+      <div class="title"><strong>${esc(c.title)}</strong><span class="status" id="status"><span class="tally"></span>Conectando…</span></div>
+      <nav class="switch" aria-label="Idioma de los subtítulos">${langs.map((l) =>
+        `<a href="?s=${encodeURIComponent(sid)}&lang=${l}" lang="${l}" ${l === lang ? 'aria-current="true"' : ""}>${l.toUpperCase()}</a>`).join("")}</nav>
+    </header>
+    <section class="stage">
+      <p class="notice" id="notice" hidden></p>
+      <div class="captions" id="captions" lang="${lang}"><p class="partial">Esperando al orador…</p></div>
+    </section>
+    <footer class="foot">
+      <span>
+        <button class="icon-btn" id="smaller" aria-label="Achicar texto">A−</button>
+        <button class="icon-btn" id="bigger" aria-label="Agrandar texto">A+</button>
+      </span>
+      <span class="downloads">Transcripción:
+        ${["srt", "vtt", "txt"].map((f) => `<a href="/api/sessions/${encodeURIComponent(sid)}/export.${f}?lang=${lang}">${f.toUpperCase()}</a>`).join("")}
+      </span>
+    </footer>`;
+
+  const box = document.getElementById("captions");
+  const statusEl = document.getElementById("status");
+  const notice = document.getElementById("notice");
+  const finals = new Map();          // seq -> text
+  let partial = null;                 // { seq, text }
+  const setStatus = (cls, text) => { statusEl.parentElement.parentElement.className = `bar ${cls}`; statusEl.className = `status ${cls}`; statusEl.innerHTML = `<span class="tally"></span>${text}`; };
+
+  const render = () => {
+    const seqs = [...finals.keys()].sort((a, b) => a - b).slice(-6);
+    const lines = seqs.map((s, i) => `<p class="${i < seqs.length - 2 ? "old" : ""}">${esc(finals.get(s))}</p>`);
+    if (partial && !finals.has(partial.seq)) lines.push(`<p class="partial" aria-hidden="true">${esc(partial.text)}</p>`);
+    if (lines.length) box.innerHTML = lines.join("");
+  };
+
+  const zoom = (d) => {
+    const cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--size")) || 1.9;
+    const next = Math.min(4, Math.max(1, cur + d));
+    document.documentElement.style.setProperty("--size", `${next}rem`);
+    localStorage.setItem("conffy:size", String(next));
+  };
+  document.getElementById("smaller").onclick = () => zoom(-0.2);
+  document.getElementById("bigger").onclick = () => zoom(0.2);
+
+  const es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/captions/${lang}/stream`);
+  es.onopen = () => { setStatus("live", "En vivo"); notice.hidden = true; };
+  es.onerror = () => { if (es.readyState !== EventSource.CLOSED) setStatus("", "Reconectando…"); };
+  es.addEventListener("caption", (e) => {
+    const cap = JSON.parse(e.data);
+    if (cap.kind === "final") {
+      finals.set(cap.seq, cap.text);
+      if (partial && partial.seq <= cap.seq) partial = null;
+      if (finals.size > 50) finals.delete(Math.min(...finals.keys()));
+    } else {
+      partial = { seq: cap.seq, text: cap.text };
+    }
+    notice.hidden = true;
+    render();
+  });
+  es.addEventListener("session", (e) => {
+    const ev = JSON.parse(e.data);
+    partial = null; render();
+    notice.hidden = false;
+    notice.textContent = ev.kind === "ended"
+      ? "La charla terminó. Podés descargar la transcripción completa abajo."
+      : "La transcripción se interrumpió. El equipo de producción ya fue notificado.";
+    setStatus("", ev.kind === "ended" ? "Finalizada" : "Interrumpida");
+  });
+}
+</script>
+</body>
+</html>

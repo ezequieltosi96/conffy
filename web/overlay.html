@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>conffy overlay</title>
+<!--
+  OBS / vMix browser source. Transparent background, captions pinned to the bottom.
+    /overlay.html?s=sala-a&lang=es            required
+    &size=48  &lines=2  &partials=0            optional
+  In OBS: Sources > + > Browser, URL http://localhost:8080/overlay.html?s=sala-a&lang=es,
+  width 1920, height 1080.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { display: flex; align-items: flex-end; justify-content: center; }
+  #captions {
+    width: 80%; margin-bottom: 6vh; text-align: center; color: #fff;
+    font: 700 var(--size, 48px)/1.25 "Atkinson Hyperlegible", system-ui, sans-serif;
+    -webkit-text-stroke: 0.06em #000; paint-order: stroke fill;
+    text-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.8);
+  }
+  #captions p { margin: 0.1em 0; }
+  #captions .partial { opacity: 0.8; }
+</style>
+</head>
+<body>
+<div id="captions"></div>
+<script>
+const p = new URLSearchParams(location.search);
+const sid = p.get("s"), lang = p.get("lang");
+const LINES = parseInt(p.get("lines") || "2", 10);
+const PARTIALS = p.get("partials") !== "0";
+if (p.get("size")) document.documentElement.style.setProperty("--size", `${parseInt(p.get("size"), 10)}px`);
+const box = document.getElementById("captions");
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+const finals = new Map();
+let partial = null, clearTimer = null;
+
+function render() {
+  const lines = [...finals.keys()].sort((a, b) => a - b).map((s) => `<p>${esc(finals.get(s))}</p>`);
+  if (PARTIALS && partial && !finals.has(partial.seq)) lines.push(`<p class="partial">${esc(partial.text)}</p>`);
+  box.innerHTML = lines.slice(-LINES).join("");
+  clearTimeout(clearTimer);  // wipe the screen after 8 s of silence
+  clearTimer = setTimeout(() => { finals.clear(); partial = null; box.innerHTML = ""; }, 8000);
+}
+
+if (sid && lang) {
+  const es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/captions/${lang}/stream`);
+  es.addEventListener("caption", (e) => {
+    const c = JSON.parse(e.data);
+    if (c.kind === "final") {
+      finals.set(c.seq, c.text);
+      if (partial && partial.seq <= c.seq) partial = null;
+      while (finals.size > LINES) finals.delete(Math.min(...finals.keys()));
+    } else partial = { seq: c.seq, text: c.text };
+    render();
+  });
+} else {
+  box.innerHTML = "<p>Missing ?s=&lt;session&gt;&amp;lang=&lt;lang&gt;</p>";
+}
+</script>
+</body>
+</html>

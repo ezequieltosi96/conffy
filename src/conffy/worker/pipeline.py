@@ -56,6 +56,8 @@ class PipelineConfig:
     min_partial_audio_s: float = 0.8
     prompt_chars: int = 200  # recent committed text passed as ASR prompt
     base_prompt: str | None = None  # e.g. glossary terms
+    start_seq: int = 0  # resume numbering after a worker failover
+    time_offset_s: float = 0.0  # added to caption times (resume after failover)
 
 
 @dataclass
@@ -93,7 +95,7 @@ class AsrPipeline:
         self.cfg = cfg
         self.stats = PipelineStats()
         self._queue: asyncio.Queue[Utterance | object] = asyncio.Queue()
-        self._next_seq = 0
+        self._next_seq = cfg.start_seq
         self._committed: deque[str] = deque(maxlen=20)
 
     # ------------------------------------------------------------------ public
@@ -212,6 +214,6 @@ class AsrPipeline:
             kind=kind,
             seq=seq,
             text=text,
-            t0=utt.t0,
-            t1=utt.t1,
+            t0=round(utt.t0 + self.cfg.time_offset_s, 3),
+            t1=round(utt.t1 + self.cfg.time_offset_s, 3),
         )

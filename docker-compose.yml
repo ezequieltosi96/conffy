@@ -1,0 +1,77 @@
+# conffy local deployment: production topology on one machine.
+#   docker compose up --build            api x2, worker x2, valkey, nginx
+#   docker compose up --scale worker=4   more simultaneous sessions
+#   docker compose --profile rtmp up     adds MediaMTX to receive OBS/vMix streams
+# The AI models run on the host (see scripts/run-host.sh): Docker on macOS has no GPU access.
+name: conffy
+
+x-app: &app
+  build: .
+  image: conffy:dev
+  restart: unless-stopped
+  environment:
+    VALKEY_URL: redis://valkey:6379/0
+    ASR_PROVIDER: ${ASR_PROVIDER:-whispercpp}
+    ASR_URL: ${ASR_URL:-http://host.docker.internal:8081}
+    MT_PROVIDER: ${MT_PROVIDER:-openai_compat}
+    MT_URL: ${MT_URL:-http://host.docker.internal:11434/v1}
+    MT_MODEL: ${MT_MODEL:-gemma4:e4b}
+    MT_API_KEY: ${MT_API_KEY:-}
+    SESSIONS_FILE: config/sessions.yml
+    GLOSSARY_FILE: config/glossary.yml
+  extra_hosts:
+    - "host.docker.internal:host-gateway"  # needed on Linux; harmless on macOS
+  volumes:
+    - ./config:/app/config:ro
+    - ./samples:/app/samples:ro
+  depends_on:
+    valkey:
+      condition: service_healthy
+
+services:
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    <<: *app
+    command: ["uvicorn", "conffy.api.main:app", "--host", "0.0.0.0", "--port", "8000",
+              "--proxy-headers", "--forwarded-allow-ips", "*"]
+    deploy:
+      replicas: 2
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "conffy.worker.service"]
+    stop_grace_period: 20s  # lets translations drain and hands the session back
+    deploy:
+      replicas: 2
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    profiles: ["rtmp"]
+    ports:
+      - "1935:1935"
+    restart: unless-stopped
+
+volumes:
+  valkey-data:
