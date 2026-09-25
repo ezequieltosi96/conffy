@@ -22,6 +22,15 @@ designed to scale to many parallel stages.
 > 100% local y está pensado para escalar a muchos escenarios en paralelo.
 > Construido en la Vibeathon de Nerdearla 2026.
 
+<p align="center">
+  <picture>
+    <img alt="Nerdearla" src="docs/assets/nerdearla-logo.png" width="420">
+  </picture>
+</p>
+<p align="center">
+  <b>Conffy — Your conference buddy nacio en la Vibeathon de Nerdearla 2026</b><br>
+</p>
+
 ## Features
 
 - **Live transcription** of English or Spanish talks with Whisper (whisper.cpp).
@@ -108,7 +117,8 @@ Handy to check the models and to tune glossaries, without Docker:
 uv sync
 uv run python -m conffy.worker.cli samples/jfk.wav
 uv run python -m conffy.worker.cli samples/charla.mp3 --glossary nerdearla
-uv run python -m conffy.worker.cli samples/charla.mp3 --lang en --to es pt
+uv run python -m conffy.worker.cli samples/charla.mp3  --glossary nerdearla
+uv run python -m conffy.worker.cli samples/charla_es.mp3 --lang es --to en --glossary nerdearla
 ```
 
 ## Configuration
@@ -245,8 +255,7 @@ config/                    talks and glossaries
 More documentation:
 
 - [docs/CONTRACTS.md](docs/CONTRACTS.md): how the pieces talk to each other.
-- [docs/ROADMAP.md](docs/ROADMAP.md): what comes next.
-- [CLAUDE.md](CLAUDE.md): technical context for AI coding agents.
+- [docs/MODELS.md](docs/MODELS.md): swapping models and providers (local, GPU servers, Gemini).
 
 ## Troubleshooting
 
