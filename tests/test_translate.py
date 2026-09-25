@@ -133,3 +133,58 @@ def test_glossary_file(tmp_path):
     assert g.asr_prompt() == "Nerdearla, Kubernetes, talk"
     with pytest.raises(KeyError):
         load_glossary(f, "missing")
+
+
+@respx.mock
+async def test_reasoning_is_disabled_by_default_and_dropped_if_rejected():
+    route = respx.post("http://mt.test/v1/chat/completions")
+    route.side_effect = [
+        httpx.Response(400, json={"error": {"message": "unknown field reasoning_effort"}}),
+        httpx.Response(200, json={"choices": [{"message": {"content": "Hi."}}]}),
+        httpx.Response(200, json={"choices": [{"message": {"content": "Bye."}}]}),
+    ]
+    mt = OpenAICompatTranslator("http://mt.test/v1", "m")
+    req = TranslationRequest(text="Hola.", source_lang="es", target_lang="en")
+    assert await mt.translate(req) == "Hi."
+    assert b'"reasoning_effort":"none"' in route.calls[0].request.content.replace(b" ", b"")
+    assert b"reasoning_effort" not in route.calls[1].request.content
+    assert await mt.translate(req) == "Bye."
+    assert b"reasoning_effort" not in route.calls[2].request.content  # remembered
+
+
+@respx.mock
+async def test_empty_content_with_reasoning_gives_a_clear_error():
+    respx.post("http://mt.test/v1/chat/completions").mock(return_value=httpx.Response(200, json={
+        "choices": [{"message": {"content": "", "reasoning": "Thinking Process: ..."}, "finish_reason": "length"}]}))
+    mt = OpenAICompatTranslator("http://mt.test/v1", "m", reasoning_effort=None)
+    with pytest.raises(ProviderError) as e:
+        await mt.translate(TranslationRequest(text="Hola.", source_lang="es", target_lang="en"))
+    assert "reasoning" in str(e.value) and not e.value.retryable
+
+
+@respx.mock
+async def test_context_leak_is_detected_and_retried_without_context():
+    leaked = "de la persona o equipo e incluso llegar a un punto muerto. En el exterior a menudo necesitas aserrar madera."
+    route = respx.post("http://mt.test/v1/chat/completions")
+    route.side_effect = [
+        httpx.Response(200, json={"choices": [{"message": {"content": leaked}}]}),
+        httpx.Response(200, json={"choices": [{"message": {"content": "deja que la sierra haga el trabajo."}}]}),
+    ]
+    mt = OpenAICompatTranslator("http://mt.test/v1", "m")
+    req = TranslationRequest(text="let the saw do the work.", source_lang="en", target_lang="es",
+                             context=("of the person or team and even grinding to a halt.",
+                                      "In the outdoors you often need to saw timber."))
+    assert await mt.translate(req) == "deja que la sierra haga el trabajo."
+    import json
+    last_user = lambda call: json.loads(call.request.content)["messages"][-1]["content"]
+    assert "<context>" in last_user(route.calls[0])
+    assert "<context>" not in last_user(route.calls[1])  # (the few-shot example keeps its own)
+
+
+@respx.mock
+async def test_normal_length_translation_is_not_retried():
+    route = respx.post("http://mt.test/v1/chat/completions").mock(
+        return_value=httpx.Response(200, json={"choices": [{"message": {"content": "Hola a todos."}}]}))
+    mt = OpenAICompatTranslator("http://mt.test/v1", "m")
+    req = TranslationRequest(text="Hello everyone.", source_lang="en", target_lang="es", context=("Welcome.",))
+    assert await mt.translate(req) == "Hola a todos." and route.call_count == 1

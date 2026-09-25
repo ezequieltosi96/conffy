@@ -23,7 +23,7 @@ from conffy.providers.asr_whispercpp import WhisperCppTranscriber
 from conffy.providers.mt_openai_compat import OpenAICompatTranslator
 from conffy.worker.audio import ffmpeg_pcm
 from conffy.worker.pipeline import AsrPipeline, PipelineConfig
-from conffy.worker.segmenter import Segmenter
+from conffy.worker.segmenter import Segmenter, SegmenterConfig
 from conffy.worker.translate import TranslationStage
 
 DIM, CYAN, RESET, CLEAR = "\033[90m", "\033[36m", "\033[0m", "\r\033[2K"
@@ -46,6 +46,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--glossary-file", default=os.environ.get("GLOSSARY_FILE", "config/glossary.yml"))
     p.add_argument("--fast", action="store_true", help="files: read as fast as possible, not at 1x")
     p.add_argument("--no-partials", action="store_true")
+    seg = p.add_argument_group("segmentation (try values before changing the defaults)")
+    d = SegmenterConfig()
+    seg.add_argument("--min-silence", type=float, default=d.min_silence_s, help="silence that ends a sentence (s)")
+    seg.add_argument("--soft-max", type=float, default=d.soft_max_s, help="after this, cut at the first short pause (s)")
+    seg.add_argument("--soft-pause", type=float, default=d.soft_pause_s, help="pause that counts after --soft-max (s)")
+    seg.add_argument("--hard-max", type=float, default=d.hard_max_s, help="cut no matter what (s)")
     return p.parse_args()
 
 
@@ -86,13 +92,25 @@ async def main() -> int:
         glossaries={lang: glossary.for_lang(lang) for lang in targets},
     )
 
+    spans: list[tuple[float, float]] = []
+
     async def emit(c: Caption) -> None:
+        if c.kind is CaptionKind.FINAL:
+            spans.append((c.t0, c.t1))
         await show(c)
         stage.submit(c)
 
     pipeline = AsrPipeline(
         transcriber,
-        Segmenter(SileroVoiceActivityDetector()),
+        Segmenter(
+            SileroVoiceActivityDetector(),
+            SegmenterConfig(
+                min_silence_s=args.min_silence,
+                soft_max_s=args.soft_max,
+                soft_pause_s=args.soft_pause,
+                hard_max_s=args.hard_max,
+            ),
+        ),
         emit,
         PipelineConfig(
             session_id="cli",
@@ -111,8 +129,11 @@ async def main() -> int:
         await translator.aclose()
 
     s, m = pipeline.stats, stage.stats
+    durations = [c1 - c0 for c0, c1 in spans]
     print(
-        f"\n{DIM}asr: finals={s.finals} partials={s.partials} dropped={s.dropped} errors={s.errors} "
+        f"\n{DIM}sentences: n={len(durations)} avg={sum(durations) / max(len(durations), 1):.1f} s "
+        f"max={max(durations, default=0):.1f} s\n"
+        f"asr: finals={s.finals} partials={s.partials} dropped={s.dropped} errors={s.errors} "
         f"avg={s.avg_asr_ms:.0f} ms max_lag={s.max_lag_s:.1f} s\n"
         f"mt:  done={m.done} errors={m.errors} avg={m.avg_mt_ms:.0f} ms{RESET}"
     )

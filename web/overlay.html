@@ -6,7 +6,8 @@
 <!--
   OBS / vMix browser source. Transparent background, captions pinned to the bottom.
     /overlay.html?s=sala-a&lang=es            required
-    &size=48  &lines=2  &partials=0            optional
+    &size=48  &lines=2  &rows=2  &partials=0   optional
+    lines = captions kept, rows = text rows visible (long captions show their end)
   In OBS: Sources > + > Browser, URL http://localhost:8080/overlay.html?s=sala-a&lang=es,
   width 1920, height 1080.
 -->
@@ -16,11 +17,15 @@
   body { display: flex; align-items: flex-end; justify-content: center; }
   #captions {
     width: 80%; margin-bottom: 6vh; text-align: center; color: #fff;
+    /* Show at most --rows text rows: long captions are clipped at the top,
+       so the newest words stay visible and the video is never covered. */
+    display: flex; flex-direction: column; justify-content: flex-end;
+    max-height: calc(var(--size, 48px) * 1.25 * var(--rows, 2)); overflow: hidden;
     font: 700 var(--size, 48px)/1.25 "Atkinson Hyperlegible", system-ui, sans-serif;
     -webkit-text-stroke: 0.06em #000; paint-order: stroke fill;
     text-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.8);
   }
-  #captions p { margin: 0.1em 0; }
+  #captions p { margin: 0; }  /* rows must align exactly with max-height */
   #captions .partial { opacity: 0.8; }
 </style>
 </head>
@@ -32,6 +37,7 @@ const sid = p.get("s"), lang = p.get("lang");
 const LINES = parseInt(p.get("lines") || "2", 10);
 const PARTIALS = p.get("partials") !== "0";
 if (p.get("size")) document.documentElement.style.setProperty("--size", `${parseInt(p.get("size"), 10)}px`);
+if (p.get("rows")) document.documentElement.style.setProperty("--rows", String(parseInt(p.get("rows"), 10)));
 const box = document.getElementById("captions");
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 const finals = new Map();

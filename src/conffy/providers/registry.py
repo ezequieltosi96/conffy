@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from conffy.contracts import Transcriber, Translator
 from conffy.settings import Settings
 
@@ -22,7 +24,9 @@ def make_translator(s: Settings) -> Translator:
     if s.mt_provider == "openai_compat":
         from conffy.providers.mt_openai_compat import OpenAICompatTranslator
 
-        return OpenAICompatTranslator(s.mt_url, s.mt_model, api_key=s.mt_api_key)
+        # "none" disables thinking (Ollama); set MT_REASONING_EFFORT="" to not send the field
+        effort = os.environ.get("MT_REASONING_EFFORT", "none")
+        return OpenAICompatTranslator(s.mt_url, s.mt_model, api_key=s.mt_api_key, reasoning_effort=effort)
     if s.mt_provider == "replay":
         from conffy.providers.replay import ReplayTranslator
 
