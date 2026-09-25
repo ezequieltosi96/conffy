@@ -68,7 +68,12 @@ async def main() -> int:
         kind=SourceKind.URL if is_url else SourceKind.FILE, uri=args.source, realtime=not args.fast
     )
     transcriber = WhisperCppTranscriber(args.asr_url)
-    translator = OpenAICompatTranslator(args.mt_url, args.mt_model, api_key=os.environ.get("MT_API_KEY"))
+    translator = OpenAICompatTranslator(
+        args.mt_url,
+        args.mt_model,
+        api_key=os.environ.get("MT_API_KEY"),
+        reasoning_effort=os.environ.get("MT_REASONING_EFFORT", "none"),
+    )
     width = shutil.get_terminal_size((100, 20)).columns
 
     async def show(c: Caption) -> None:
