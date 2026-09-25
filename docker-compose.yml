@@ -2,6 +2,7 @@
 #   docker compose up --build            api x2, worker x2, valkey, nginx
 #   docker compose up --scale worker=4   more simultaneous sessions
 #   docker compose --profile rtmp up     adds MediaMTX to receive OBS/vMix streams
+#   ASR_PROVIDER=replay MT_PROVIDER=replay docker compose up   fake models, no GPU (see make loadtest-up)
 # The AI models run on the host (see scripts/run-host.sh): Docker on macOS has no GPU access.
 name: conffy
 
@@ -17,8 +18,15 @@ x-app: &app
     MT_URL: ${MT_URL:-http://host.docker.internal:11434/v1}
     MT_MODEL: ${MT_MODEL:-gemma4:e4b}
     MT_API_KEY: ${MT_API_KEY:-}
-    SESSIONS_FILE: config/sessions.yml
+    REPLAY_ASR_LATENCY_MS: ${REPLAY_ASR_LATENCY_MS:-600}
+    REPLAY_MT_LATENCY_MS: ${REPLAY_MT_LATENCY_MS:-1200}
+    SESSIONS_FILE: ${SESSIONS_FILE:-config/sessions.yml}
     GLOSSARY_FILE: config/glossary.yml
+    # The VAD runs on ggml + OpenMP, whose threads spin-wait between frames and
+    # burn ~half a core per worker for nothing. One sleeping thread is plenty
+    # for 31 frames/s (~2% of a core).
+    OMP_NUM_THREADS: "1"
+    OMP_WAIT_POLICY: PASSIVE
   extra_hosts:
     - "host.docker.internal:host-gateway"  # needed on Linux; harmless on macOS
   volumes:

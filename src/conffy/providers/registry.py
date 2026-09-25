@@ -11,7 +11,11 @@ def make_transcriber(s: Settings) -> Transcriber:
         from conffy.providers.asr_whispercpp import WhisperCppTranscriber
 
         return WhisperCppTranscriber(s.asr_url)
-    raise ValueError(f"unknown ASR_PROVIDER {s.asr_provider!r} (available: whispercpp)")
+    if s.asr_provider == "replay":
+        from conffy.providers.replay import ReplayTranscriber
+
+        return ReplayTranscriber(s.replay_asr_latency_ms, s.replay_transcript)
+    raise ValueError(f"unknown ASR_PROVIDER {s.asr_provider!r} (available: whispercpp, replay)")
 
 
 def make_translator(s: Settings) -> Translator:
@@ -19,4 +23,8 @@ def make_translator(s: Settings) -> Translator:
         from conffy.providers.mt_openai_compat import OpenAICompatTranslator
 
         return OpenAICompatTranslator(s.mt_url, s.mt_model, api_key=s.mt_api_key)
-    raise ValueError(f"unknown MT_PROVIDER {s.mt_provider!r} (available: openai_compat)")
+    if s.mt_provider == "replay":
+        from conffy.providers.replay import ReplayTranslator
+
+        return ReplayTranslator(s.replay_mt_latency_ms)
+    raise ValueError(f"unknown MT_PROVIDER {s.mt_provider!r} (available: openai_compat, replay)")

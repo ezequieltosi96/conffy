@@ -22,6 +22,9 @@ class Settings:
     mt_api_key: str | None = field(default_factory=lambda: os.environ.get("MT_API_KEY") or None)
     sessions_file: str = field(default_factory=lambda: _env("SESSIONS_FILE", "config/sessions.yml"))
     glossary_file: str = field(default_factory=lambda: _env("GLOSSARY_FILE", "config/glossary.yml"))
+    replay_asr_latency_ms: float = field(default_factory=lambda: float(_env("REPLAY_ASR_LATENCY_MS", "600")))
+    replay_mt_latency_ms: float = field(default_factory=lambda: float(_env("REPLAY_MT_LATENCY_MS", "1200")))
+    replay_transcript: str | None = field(default_factory=lambda: os.environ.get("REPLAY_TRANSCRIPT") or None)
     worker_id: str = field(
         default_factory=lambda: _env("WORKER_ID", f"{socket.gethostname()}-{os.getpid()}")
     )

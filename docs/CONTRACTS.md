@@ -30,7 +30,7 @@ Rules:
 1. `seq` grows by 1 per FINAL.
 2. A PARTIAL with seq N replaces the previous PARTIAL with seq N.
 3. A FINAL with seq N replaces PARTIAL N and never changes again.
-4. Target-language streams carry FINALs only; `source_seq` points to the source FINAL.
+4. Target-language streams carry FINALs only; `seq == source_seq`, pointing to the source FINAL. A failed translation leaves a gap.
 5. Viewers render every FINAL plus at most one current PARTIAL.
 6. `t0`/`t1` are seconds since the session's audio started. Exports use them directly.
 
@@ -64,9 +64,10 @@ Streams are capped with `XADD MAXLEN ~` (captions 50 000, audio 3 000).
 | POST | `/api/sessions` | create from `SessionConfig` |
 | GET | `/api/sessions/{id}` | config + state |
 | POST | `/api/sessions/{id}/stop` | mark ENDED; worker releases the lease |
+| POST | `/api/sessions/{id}/start` | (re)start an ENDED or ERROR session: back to WAITING |
 | GET | `/api/sessions/{id}/captions/{lang}/stream` | SSE (see below) |
 | GET | `/api/sessions/{id}/export.{srt,vtt,txt}?lang=es` | FINALs formatted as a file |
-| WS | `/api/sessions/{id}/ingest` | binary PCM frames, browser sources only |
+| WS | `/api/sessions/{id}/ingest` | binary PCM frames, browser sources only (not implemented yet) |
 
 ### SSE
 
@@ -82,12 +83,15 @@ Worker code depends only on the `Transcriber` and `Translator` protocols. Adapte
 
 | Env var | Default | Notes |
 |---|---|---|
-| `ASR_PROVIDER` | `whispercpp` | `whispercpp`, `replay` (fake), `gemini` (later) |
+| `ASR_PROVIDER` | `whispercpp` | `whispercpp`, `replay` (fake, no model), `gemini` (planned) |
 | `ASR_URL` | `http://host.docker.internal:8081` | whisper-server base URL |
-| `MT_PROVIDER` | `openai_compat` | covers Ollama, vLLM, llama.cpp, LM Studio; `replay`, `gemini` |
+| `MT_PROVIDER` | `openai_compat` | covers Ollama, vLLM, llama.cpp, LM Studio; `replay` (fake), `gemini` (planned) |
 | `MT_URL` | `http://host.docker.internal:11434/v1` | OpenAI-compatible base URL |
 | `MT_MODEL` | `gemma4:e4b` | any model the MT server knows |
 | `MT_API_KEY` | empty | only for hosted providers |
 | `VALKEY_URL` | `redis://valkey:6379/0` | |
-| `SESSIONS_FILE` | `/app/config/sessions.yml` | sessions created at api startup |
+| `REPLAY_ASR_LATENCY_MS` | `600` | replay ASR: simulated latency per call (±20%) |
+| `REPLAY_MT_LATENCY_MS` | `1200` | replay MT: simulated latency per call (±20%) |
+| `REPLAY_TRANSCRIPT` | built-in text | replay ASR: text file to read words from |
+| `SESSIONS_FILE` | `config/sessions.yml` | sessions created at api startup |
 | `GLOSSARY_FILE` | `/app/config/glossary.yml` | |
