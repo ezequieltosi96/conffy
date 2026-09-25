@@ -137,7 +137,8 @@
     padding: 2rem 1.25rem; border: 1px dashed var(--line); border-radius: var(--radius);
     color: var(--muted); font-weight: 600; text-wrap: balance;
   }
-  .empty::before { content: ""; width: 5rem; height: 5rem; background: url(assets/mascot.png) center / contain no-repeat; }
+  .empty::before { content: ""; width: 5rem; height: 5rem; background: url(assets/mascot-dark.png) center / contain no-repeat; }
+  [data-theme="light"] .empty::before { background-image: url(assets/mascot-light.png); }
   @media (min-width: 40rem) {
     .wrap { padding-top: max(2.5rem, env(safe-area-inset-top)); }
     .session {
